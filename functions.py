@@ -24,3 +24,5 @@ def check_north_america():
 
 def check_south_america():
     print('hello')
+
+
