@@ -1,4 +1,4 @@
-
+import functions
 import requests
 import json
 import sqlite3
