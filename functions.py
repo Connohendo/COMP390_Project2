@@ -11,6 +11,7 @@ def check_geoloc(meteor):
     return True
 
 
+
 def loop_through_jsondata(json_data, bound_box_dict, db_cursor):
     for record in json_data:
         if check_geoloc(record):
@@ -31,7 +32,7 @@ def create_tables(bound_box_dict, db_cursor):
         db_cursor.execute(create_table)
         db_cursor.execute(f'DELETE FROM {key}')
 
-# The following 3 functions were created by Professor Matta at Bridgewater State University
+# The following 4 functions were created by Professor Matta at Bridgewater State University
 
 
 def _string_is_int(in_string):

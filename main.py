@@ -30,8 +30,81 @@ def main():
         # create a cursor object - this cursor object will be used for all operations pertaining to the database
         db_cursor = db_connection.cursor()
 
-        functions.create_tables(bound_box_dict, db_cursor)
-        functions.loop_through_jsondata(json_data, bound_box_dict, db_cursor)
+        # create a table in the database to store ALL the meteorite data (if it does not already exist)
+        # the parentheses following the table name ("meteorite_data") contains a list of column names
+        # and the data type of values that will be inserted into those columns
+        db_cursor.execute('''CREATE TABLE IF NOT EXISTS meteorite_data(
+                                name TEXT,
+                                id INTEGER,
+                                nametype TEXT,
+                                recclass TEXT,
+                                mass TEXT,
+                                fall TEXT,
+                                year TEXT,
+                                reclat TEXT,
+                                reclong TEXT,
+                                geolocation TEXT,
+                                states TEXT,
+                                counties TEXT);''')
+
+        # clear the 'meteorite_data' table if it already contains data from last time the program was run
+        db_cursor.execute('DELETE FROM meteorite_data')
+
+        # read all the data from the specified json URL and insert it into the database:
+        # loop through each dictionary entry in the JSON list
+        for record in json_data:
+            if functions.check_geoloc(record):
+                # some keys may not exist because there is no value for that record - use <dict>.get()
+                # to INSERT 'None' if the key is not found
+                db_cursor.execute('''INSERT INTO meteorite_data VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                                  (record.get('name', None),
+                                   int(record.get('id', None)),
+                                   record.get('nametype', None),
+                                   record.get('recclass', None),
+                                   record.get('mass', None),
+                                   record.get('fall', None),
+                                   record.get('year', None),
+                                   record.get('reclat', None),
+                                   record.get('reclong', None),
+                                   functions.convert_obj_to_string(record, 'geolocation'),  # convert geolocation <dict> to string
+                                   record.get(':@computed_region_cbhk_fwbd', None),
+                                   record.get(':@computed_region_nnqa_25f4', None)))
+
+            # run a SELECT query on the table that holds all meteorite data
+        for key, value in bound_box_dict.items():
+            db_cursor.execute(f'''
+                                SELECT name, mass, reclat, reclong FROM meteorite_data 
+                                WHERE CAST(reclong AS FLOAT) BETWEEN {value[0]} AND {value[2]} 
+                                AND CAST(reclat AS FLOAT) BETWEEN {value[1]} AND {value[3]}
+                              ''')
+        # # get the result of the query as a list of tuples
+            q1_result = db_cursor.fetchall()
+
+        # create a table in the database to store the filtered data (if it does not already exist)
+        # this table will hold the resulting rows of our SELECT query
+            db_cursor.execute(f'''CREATE TABLE IF NOT EXISTS {key}(
+                                                   name TEXT,
+                                                   id INTEGER,
+                                                   nametype TEXT,
+                                                   recclass TEXT,
+                                                   mass TEXT,
+                                                   fall TEXT,
+                                                   year TEXT,
+                                                   reclat TEXT,
+                                                   reclong TEXT,
+                                                   geolocation TEXT,
+                                                   states TEXT,
+                                                   counties TEXT);''')
+
+            # clear the 'filtered_data' table if it already contains data from last time the program was run
+            db_cursor.execute(f'DELETE FROM {key}')
+
+        # fill the filtered table
+            for tuple_entry in q1_result:
+                db_cursor.execute(f'''INSERT INTO {key} VALUES(?, ?, ?, ?)''', tuple_entry)
+
+        # functions.create_tables(bound_box_dict, db_cursor)
+        # functions.loop_through_jsondata(json_data, bound_box_dict, db_cursor)
 
         # commit all changes made to the database
         db_connection.commit()
