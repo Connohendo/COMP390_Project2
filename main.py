@@ -84,17 +84,10 @@ def main():
         # this table will hold the resulting rows of our SELECT query
             db_cursor.execute(f'''CREATE TABLE IF NOT EXISTS {key}(
                                                    name TEXT,
-                                                   id INTEGER,
-                                                   nametype TEXT,
-                                                   recclass TEXT,
                                                    mass TEXT,
-                                                   fall TEXT,
-                                                   year TEXT,
                                                    reclat TEXT,
-                                                   reclong TEXT,
-                                                   geolocation TEXT,
-                                                   states TEXT,
-                                                   counties TEXT);''')
+                                                   reclong TEXT
+                                                                );''')
 
             # clear the 'filtered_data' table if it already contains data from last time the program was run
             db_cursor.execute(f'DELETE FROM {key}')
